@@ -54,10 +54,14 @@ const animationTimeline = () => {
 
   const tl = new TimelineMax();
 
+  // 启动持续的爱心散落效果
+  startContinuousHearts();
+
   tl
     .to(".container", 0.1, {
       visibility: "visible"
     })
+    // 移除这里的单次爱心雨调用
     .from(".one", 0.7, {
       opacity: 0,
       y: 10
@@ -255,6 +259,8 @@ const animationTimeline = () => {
       0.1,
       "party"
     )
+    // 添加浪漫爱心环绕效果
+    .call(createHeartSurrounding, [], "party")
     .from(
       ".wish h5",
       0.5,
@@ -290,7 +296,13 @@ const animationTimeline = () => {
         rotation: 90
       },
       "+=1"
-    );
+    )
+    // 添加最终的浪漫文字
+    .from(".romantic-message", 1, {
+      opacity: 0,
+      scale: 0.5,
+      ease: Back.easeOut
+    }, "+=0.5");
 
   // tl.seek("currentStep");
   // tl.timeScale(2);
@@ -300,7 +312,137 @@ const animationTimeline = () => {
   replyBtn.addEventListener("click", () => {
     tl.restart();
   });
+  
+  // 创建持续的爱心散落效果
+  function startContinuousHearts() {
+    // 初始创建几个爱心
+    createHearts();
+    
+    // 每隔一段时间创建新的爱心
+    setInterval(createHearts, 3000);
+  }
+  
+  // 创建少量爱心
+  function createHearts() {
+    // 使用document.body而不是container，确保爱心能覆盖整个屏幕
+    const body = document.body;
+    // 减少爱心数量
+    const heartCount = 5;
+    
+    for (let i = 0; i < heartCount; i++) {
+      const heart = document.createElement("div");
+      heart.className = "heart-rain";
+      heart.innerHTML = "❤";
+      
+      // 随机位置 - 横向随机，纵向在屏幕各处随机
+      heart.style.left = Math.random() * 100 + "%";
+      heart.style.top = Math.random() * 100 + "%";
+      
+      heart.style.animationDuration = (Math.random() * 5) + 3 + "s"; 
+      heart.style.fontSize = (Math.random() * 15) + 10 + "px"; 
+      heart.style.opacity = Math.random() * 0.7 + 0.3;
+      heart.style.color = `rgb(${Math.floor(Math.random()*55) + 200}, ${Math.floor(Math.random()*100)}, ${Math.floor(Math.random()*100)})`;
+      body.appendChild(heart);
+      
+      // 自动移除爱心元素
+      setTimeout(() => {
+        if (heart && heart.parentNode) {
+          heart.parentNode.removeChild(heart);
+        }
+      }, 8000);
+    }
+  }
+  
+  // 创建爱心环绕效果
+  function createHeartSurrounding() {
+    const wishHbd = document.querySelector(".wish-hbd");
+    const heartCount = 12;
+    const radius = 150;
+    
+    for (let i = 0; i < heartCount; i++) {
+      const heart = document.createElement("div");
+      heart.className = "heart-surrounding";
+      heart.innerHTML = "❤";
+      heart.style.color = "#ff1493";
+      heart.style.fontSize = "24px";
+      heart.style.position = "absolute";
+      
+      const angle = (i / heartCount) * Math.PI * 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
+      gsap.set(heart, { x, y, opacity: 0 });
+      wishHbd.appendChild(heart);
+      
+      gsap.to(heart, {
+        duration: 1,
+        opacity: 1,
+        ease: "power2.out"
+      });
+      
+      gsap.to(heart, {
+        duration: 10,
+        rotation: 360,
+        repeat: -1,
+        ease: "none"
+      });
+      
+      gsap.to(heart, {
+        duration: 3,
+        x: x * 1.2,
+        y: y * 1.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    }
+  }
 };
 
+// 添加必要的CSS样式
+function addRomanticStyles() {
+  const styleEl = document.createElement('style');
+  styleEl.innerHTML = `
+    .heart-rain {
+      position: fixed;
+      pointer-events: none;
+      animation: heart-float linear forwards;
+      z-index: 9999;
+    }
+    
+    @keyframes heart-float {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+      100% {
+        transform: translate(${Math.random() > 0.5 ? '+' : '-'}${Math.random() * 100}px, ${Math.random() * 100 + 100}px) rotate(${Math.random() * 360}deg);
+        opacity: 0;
+      }
+    }
+    
+    /* 其他样式保持不变 */
+    .heart-surrounding {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 100;
+    }
+    
+    .romantic-message {
+      position: relative;
+      text-align: center;
+      font-size: 24px;
+      color: #ff1493;
+      font-family: 'Dancing Script', cursive;
+      margin-top: 20px;
+      text-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
+    }
+  `;
+  document.head.appendChild(styleEl);
+}
+
 // Run fetch and animation in sequence
+addRomanticStyles();
 fetchData();
